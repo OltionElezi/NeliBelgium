@@ -1,0 +1,23 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install:*)",
+      "Bash(npx prisma:*)",
+      "Bash(npm run dev:*)",
+      "Bash(timeout /t 5 /nobreak)",
+      "Bash(ping:*)",
+      "Bash(npx tsc --noEmit)",
+      "Bash(ls:*)",
+      "Bash(npx tsc)",
+      "Bash(tree:*)",
+      "Bash(npm run build:*)",
+      "Bash(npm start)",
+      "Bash(taskkill:*)",
+      "Bash(netstat:*)",
+      "Bash(findstr:*)",
+      "Bash(powershell:*)",
+      "Bash(timeout /t 2 /nobreak)",
+      "Bash(tasklist:*)"
+    ]
+  }
+}

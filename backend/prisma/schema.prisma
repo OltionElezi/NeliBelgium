@@ -1,0 +1,187 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  password  String
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Company {
+  id             Int      @id @default(autoincrement())
+  name           String   // L&E BOUW CONSTRUTION
+  ownerName      String   // TAULANT KACANI
+  address        String   // Calle altozano numero 12 chaparrel
+  city           String   // MIJAS
+  region         String   // MALAGA
+  postalCode     String   // 29604
+  taxId          String   // Z1543441P
+  bankAccount    String   // ES5201824290900201606200
+  bankCode       String   // BE 45737066789189
+  email          String
+  phone          String?
+  logo           Bytes?
+  invoicePrefix  String   @default("FACTURA NR.")
+  nextInvoiceNum Int      @default(1)
+  btwNumber      String?  // BTW-nummer:BE 0475559227
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model Client {
+  id                  Int                  @id @default(autoincrement())
+  name                String
+  email               String?
+  phone               String?
+  address             String?
+  city                String?
+  country             String               @default("Belgium")
+  btwNumber           String?
+  notes               String?
+  invoices            Invoice[]
+  electricalProjects  ElectricalProject[]
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+  deletedAt           DateTime?            // Soft delete
+}
+
+model Product {
+  id           Int           @id @default(autoincrement())
+  name         String
+  description  String?
+  sku          String?       @unique // Stock Keeping Unit
+  priceBuying  Decimal       @db.Decimal(10, 2) // Cost price
+  priceSelling Decimal       @db.Decimal(10, 2) // Selling price
+  stock        Int           @default(0)
+  unit         String        @default("stuk")
+  category     String?
+  invoiceItems InvoiceItem[]
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  deletedAt    DateTime?     // Soft delete
+}
+
+model Invoice {
+  id            Int           @id @default(autoincrement())
+  invoiceNumber String        @unique
+  client        Client        @relation(fields: [clientId], references: [id])
+  clientId      Int
+  items         InvoiceItem[]
+  subtotal      Decimal       @db.Decimal(10, 2)
+  btwRate       Decimal       @default(21) @db.Decimal(5, 2)
+  btwAmount     Decimal       @db.Decimal(10, 2)
+  total         Decimal       @db.Decimal(10, 2)
+  profit        Decimal       @default(0) @db.Decimal(10, 2) // Total profit from this invoice
+  status        InvoiceStatus @default(DRAFT)
+  notes         String?
+  issueDate     DateTime      @default(now())
+  dueDate       DateTime?
+  paidAt        DateTime?
+  sentAt        DateTime?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  deletedAt     DateTime?     // Soft delete
+}
+
+model InvoiceItem {
+  id          Int      @id @default(autoincrement())
+  invoice     Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  invoiceId   Int
+  product     Product? @relation(fields: [productId], references: [id])
+  productId   Int?
+  description String
+  quantity    Int      @default(1)
+  unit        String   @default("stuk") // eenheid
+  costPrice   Decimal  @default(0) @db.Decimal(10, 2) // What we paid
+  unitPrice   Decimal  @db.Decimal(10, 2) // What we charge
+  total       Decimal  @db.Decimal(10, 2)
+  profit      Decimal  @default(0) @db.Decimal(10, 2) // Profit per item
+}
+
+model Worker {
+  id        Int       @id @default(autoincrement())
+  name      String
+  phone     String?
+  email     String?
+  role      String?
+  expenses  Expense[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime? // Soft delete
+}
+
+model Expense {
+  id          Int       @id @default(autoincrement())
+  worker      Worker    @relation(fields: [workerId], references: [id])
+  workerId    Int
+  amount      Decimal   @db.Decimal(10, 2)
+  description String?
+  category    String?   // materials, salary, advance, etc.
+  date        DateTime  @default(now())
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime? // Soft delete
+}
+
+// Company-level expenses (not worker-related)
+model CompanyExpense {
+  id          Int       @id @default(autoincrement())
+  amount      Decimal   @db.Decimal(10, 2)
+  description String?
+  category    String    // rent, utilities, equipment, supplies, etc.
+  vendor      String?   // Who was paid
+  reference   String?   // Receipt/invoice number
+  date        DateTime  @default(now())
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime? // Soft delete
+}
+
+enum InvoiceStatus {
+  DRAFT
+  SENT
+  PAID
+  OVERDUE
+  CANCELLED
+}
+
+// Electrical Projects for clients
+model ElectricalProject {
+  id          Int                  @id @default(autoincrement())
+  name        String
+  description String?
+  client      Client               @relation(fields: [clientId], references: [id])
+  clientId    Int
+  address     String?              // Project location
+  diagrams    ElectricalDiagram[]
+  createdAt   DateTime             @default(now())
+  updatedAt   DateTime             @updatedAt
+  deletedAt   DateTime?            // Soft delete
+}
+
+model ElectricalDiagram {
+  id          Int                @id @default(autoincrement())
+  project     ElectricalProject  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  projectId   Int
+  name        String
+  type        DiagramType
+  diagramData Json               // Complete diagram JSON (elements, connections, canvas settings)
+  pageIndex   Int                @default(0)
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+}
+
+enum DiagramType {
+  FLOOR_PLAN
+  DISTRIBUTION_BOARD
+  CIRCUIT
+}
