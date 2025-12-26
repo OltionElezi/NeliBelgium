@@ -331,7 +331,7 @@ const Invoices: React.FC = () => {
                           </>
                         )}
                         <Link
-                          to={`/invoices/${invoice.id}/edit`}
+                          to={`/dashboard/invoices/${invoice.id}/edit`}
                           className="p-2 text-gray-500 hover:text-primary-600 hover:bg-gray-100 rounded-lg transition-colors"
                           title={t('common.edit')}
                         >
@@ -393,18 +393,59 @@ const Invoices: React.FC = () => {
           <div className="bg-white rounded-xl shadow-xl w-full max-w-4xl mx-4 max-h-[90vh] overflow-hidden" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between p-4 border-b">
               <h2 className="text-xl font-semibold">{pdfPreview.invoiceNumber}</h2>
-              <button
-                onClick={() => setPdfPreview({ show: false, url: '', invoiceNumber: '' })}
-                className="p-2 hover:bg-gray-100 rounded-lg"
-              >
-                <span className="text-2xl">&times;</span>
-              </button>
+              <div className="flex items-center gap-2">
+                <a
+                  href={pdfPreview.url}
+                  download={`invoice-${pdfPreview.invoiceNumber}.pdf`}
+                  className="btn-secondary text-sm flex items-center gap-1"
+                >
+                  <Download className="w-4 h-4" />
+                  {t('common.download')}
+                </a>
+                <button
+                  onClick={() => setPdfPreview({ show: false, url: '', invoiceNumber: '' })}
+                  className="p-2 hover:bg-gray-100 rounded-lg"
+                >
+                  <span className="text-2xl">&times;</span>
+                </button>
+              </div>
             </div>
-            <iframe
-              src={pdfPreview.url}
-              className="w-full h-[70vh]"
-              title="PDF Preview"
-            />
+            {/* Mobile-friendly PDF display */}
+            <div className="w-full h-[70vh] overflow-auto">
+              <object
+                data={pdfPreview.url}
+                type="application/pdf"
+                className="w-full h-full hidden md:block"
+              >
+                <iframe
+                  src={pdfPreview.url}
+                  className="w-full h-full"
+                  title="PDF Preview"
+                />
+              </object>
+              {/* Mobile fallback */}
+              <div className="md:hidden flex flex-col items-center justify-center h-full p-6 text-center">
+                <FileText className="w-16 h-16 text-gray-400 mb-4" />
+                <p className="text-gray-600 mb-4">{t('invoices.pdfMobileNote') || 'PDF preview may not work on mobile. Please download to view.'}</p>
+                <a
+                  href={pdfPreview.url}
+                  download={`invoice-${pdfPreview.invoiceNumber}.pdf`}
+                  className="btn-primary flex items-center gap-2"
+                >
+                  <Download className="w-5 h-5" />
+                  {t('common.download')} PDF
+                </a>
+                <a
+                  href={pdfPreview.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn-secondary mt-3 flex items-center gap-2"
+                >
+                  <Eye className="w-5 h-5" />
+                  {t('invoices.openInNewTab') || 'Open in new tab'}
+                </a>
+              </div>
+            </div>
           </div>
         </div>
       )}

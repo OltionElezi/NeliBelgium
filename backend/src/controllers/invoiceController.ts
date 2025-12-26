@@ -83,7 +83,7 @@ export const getInvoiceById = async (req: Request, res: Response) => {
 
 export const createInvoice = async (req: Request, res: Response) => {
   try {
-    const { clientId, items, notes, btwRate = 21, issueDate, dueDate } = req.body;
+    const { clientId, items, notes, btwRate = 21, issueDate, dueDate, invoiceNumber: customInvoiceNumber } = req.body;
 
     if (!clientId) {
       return res.status(400).json({ error: 'Client is required' });
@@ -99,8 +99,9 @@ export const createInvoice = async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'Company settings not configured' });
     }
 
-    // Generate invoice number
-    const invoiceNumber = `${company.invoicePrefix}${company.nextInvoiceNum}`;
+    // Use custom invoice number or generate one
+    const invoiceNumber = customInvoiceNumber || `${company.invoicePrefix}${company.nextInvoiceNum}`;
+    const shouldIncrementCounter = !customInvoiceNumber;
 
     // Calculate totals and profit
     let subtotal = new Prisma.Decimal(0);
@@ -171,11 +172,13 @@ export const createInvoice = async (req: Request, res: Response) => {
       }
     });
 
-    // Increment invoice number
-    await prisma.company.update({
-      where: { id: company.id },
-      data: { nextInvoiceNum: company.nextInvoiceNum + 1 }
-    });
+    // Only increment invoice number if we didn't use a custom one
+    if (shouldIncrementCounter) {
+      await prisma.company.update({
+        where: { id: company.id },
+        data: { nextInvoiceNum: company.nextInvoiceNum + 1 }
+      });
+    }
 
     res.status(201).json(invoice);
   } catch (error) {
